@@ -92,22 +92,52 @@ exports.getAllReservations = getAllReservations;
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
-// const getAllProperties = function(options, limit = 10) {
-//   pool.query(`
-//     SELECT * FROM properties LIMIT 10;
-//   `)
-//   .then(res => console.log(res));
-// }
 
 const getAllProperties = function(options, limit = 10) {
-  return pool.query(`
-  SELECT * FROM properties
-  LIMIT $1
-  `, [limit])
-  .then(res => res.rows);
+  const queryParams = [];
+  let queryString = `
+  SELECT
+    properties.*,
+    avg(property_reviews.rating) AS average_rating
+  FROM
+    properties
+    JOIN property_reviews ON property_id = properties.id
+  `;
+
+  //Add in WHERE clauses for each option if exists
+  if(options.city){
+    queryParams.push(`%${options.city}%`);
+    queryString += `WHERE city LIKE $${queryParams.length}`;
+  }
+
+  // Using ${queryParams.length > 0 ? ' AND' : ' WHERE'} to determine whether each option is the first where clause or not
+  if(options.owner_id){
+    queryParams.push(`%${options.owner_id}`);
+    queryString += `${queryParams.length > 0 ? ' AND' : ' WHERE'} owner_id = $${queryParams.length}`;
+  }
+  
+  //Multiply by 100 to convert price to cents
+  if(options.minimum_price_per_night){
+    queryParams.push(`${options.minimum_price_per_night * 100}`);
+    queryString += `${queryParams.length > 0 ? ' AND' : ' WHERE'}  $${queryParams.length} < properties.cost_per_night `;
+  }
+  
+  if(options.maximum_price_per_night){
+    queryParams.push(`${options.maximum_price_per_night * 100}`);
+    queryString += `${queryParams.length > 0 ? ' AND' : ' WHERE'}  $${queryParams.length} > properties.cost_per_night `;
+  }
+
+  queryString += ` GROUP BY properties.id`;
+
+  if(options.minimum_rating){
+    queryParams.push(`${options.minimum_rating}`);
+    queryString += ` HAVING avg(rating) > $${queryParams.length}`;
+  }
+
+  return pool.query(queryString, queryParams)
+    .then(res => res.rows);
 }
 exports.getAllProperties = getAllProperties;
-
 
 /**
  * Add a property to the database
