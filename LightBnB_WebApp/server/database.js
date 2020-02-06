@@ -1,10 +1,11 @@
 const { Pool } = require('pg');
+require('dotenv').config();
 
 const pool = new Pool({
-  user: 'vagrant',
-  host: 'localhost',
-  database: 'lightbnb',
-  password: '123'
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DATABASE,
+  password: process.env.DB_PASSWORD
 });
 
 //Modular function run for all queries
@@ -155,7 +156,6 @@ const getAllProperties = function(options, limit = 10) {
     queryParams.push(`${options.minimum_rating}`);
     queryString += ` HAVING avg(rating) > $${queryParams.length}`;
   }
-  console.log(queryString, queryParams)
   return query(queryString, queryParams)
     .then(res => res.rows ? res.rows : null)
     .catch(err => console.error('query error', err));
