@@ -131,21 +131,22 @@ const getAllProperties = function(options, limit = 10) {
     queryString += `WHERE city LIKE $${queryParams.length}`;
   }
 
-  // Using ${queryParams.length > 0 ? ' AND' : ' WHERE'} to determine whether each option is the first where clause or not
+  // Using ${queryParams.length > 1 ? ' AND' : ' WHERE'} to determine 
+  //whether each option is the first to be pushed in and needs a where clause or and clause
   if(options.owner_id){
-    queryParams.push(`%${options.owner_id}`);
-    queryString += `${queryParams.length > 0 ? ' AND' : ' WHERE'} owner_id = $${queryParams.length}`;
+    queryParams.push(`${options.owner_id}`);
+    queryString += `${queryParams.length > 1 ? ' AND' : ' WHERE'} owner_id = $${queryParams.length}`;
   }
   
   //Multiply by 100 to convert price to cents
   if(options.minimum_price_per_night){
     queryParams.push(`${options.minimum_price_per_night * 100}`);
-    queryString += `${queryParams.length > 0 ? ' AND' : ' WHERE'}  $${queryParams.length} < properties.cost_per_night `;
+    queryString += `${queryParams.length > 1 ? ' AND' : ' WHERE'}  $${queryParams.length} < properties.cost_per_night `;
   }
   
   if(options.maximum_price_per_night){
     queryParams.push(`${options.maximum_price_per_night * 100}`);
-    queryString += `${queryParams.length > 0 ? ' AND' : ' WHERE'}  $${queryParams.length} > properties.cost_per_night `;
+    queryString += `${queryParams.length > 1 ? ' AND' : ' WHERE'}  $${queryParams.length} > properties.cost_per_night `;
   }
 
   queryString += ` GROUP BY properties.id`;
